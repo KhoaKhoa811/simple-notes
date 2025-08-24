@@ -1,0 +1,7 @@
+# Dockerfile-jenkins
+FROM jenkins/jenkins:2.516.2-jdk21
+
+USER jenkins
+
+# Chỉ cài plugin cần thiết
+RUN jenkins-plugin-cli --plugins "blueocean docker-workflow json-path-api"
