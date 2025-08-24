@@ -1,17 +1,30 @@
 services:
-  mysql:
+  notes-mysql:
     image: mysql:8.0
     container_name: notes-mysql
     restart: always
     environment:
+      MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: notesdb
       MYSQL_USER: notesuser
       MYSQL_PASSWORD: notespass
-      MYSQL_ROOT_PASSWORD: rootpass
     ports:
       - "3308:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+
+  notes-app:
+    build: .
+    container_name: notes-app
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - notes-mysql
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://notes-mysql:3306/notesdb
+      SPRING_DATASOURCE_USERNAME: notesuser
+      SPRING_DATASOURCE_PASSWORD: notespass
 
 volumes:
   mysql_data:
