@@ -1,12 +1,6 @@
 # Dockerfile-jenkins
 FROM jenkins/jenkins:2.516.2-jdk21
 
-USER root
-
-# Cài Docker CLI (chỉ CLI, không chạy daemon)
-RUN apt-get update && apt-get install -y docker.io \
-    && rm -rf /var/lib/apt/lists/*
-
 # Trả quyền cho Jenkins user
 USER jenkins
 
