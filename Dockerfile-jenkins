@@ -1,7 +1,14 @@
 # Dockerfile-jenkins
 FROM jenkins/jenkins:2.516.2-jdk21
 
+USER root
+
+# Chỉ cài docker CLI
+RUN apt-get update && apt-get install -y docker.io \
+    && rm -rf /var/lib/apt/lists/*
+
+# Trả quyền về user jenkins để an toàn
 USER jenkins
 
-# Chỉ cài plugin cần thiết
+# Cài plugin Jenkins cần cho pipeline + docker
 RUN jenkins-plugin-cli --plugins "blueocean docker-workflow json-path-api"
