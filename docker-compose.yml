@@ -31,36 +31,35 @@ services:
       context: .
       dockerfile: Dockerfile-jenkins
     container_name: jenkins-master
-    restart: on-failure
+    restart: always
+    user: root
     ports:
       - "8080:8080"
-      - "50000:50000"
+      - "50000:50000"  # cho agent JNLP kết nối
     volumes:
       - jenkins-data:/var/jenkins_home
-      # CHỈ mount socket nếu master cần, thường thì không
-      # - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock  # mount socket
     networks:
       - jenkins-net
 
   jenkins-agent:
     image: jenkins/agent:latest-jdk11
     container_name: jenkins-agent
-    restart: unless-stopped
+    restart: always
     environment:
       JENKINS_URL: "http://jenkins:8080"
+      JENKINS_SECRET: "e617046a3d2530fee00800ccccca36c37d85f953db414045c6c1680faa0e25df"
       JENKINS_AGENT_NAME: "docker-agent"
-      JENKINS_SECRET: "<secret-key>"  # secret lấy từ Jenkins UI khi add agent
+      JENKINS_AGENT_WORKDIR: "/home/jenkins/agent"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  # agent mới cần socket
-      - /usr/bin/docker:/usr/bin/docker
-      - jenkins-agent-data:/home/jenkins
+      - agent_home:/home/jenkins/agent
     networks:
       - jenkins-net
 
 volumes:
   mysql_data:
   jenkins-data:
-  jenkins-agent-data:
+  agent_home:
 
 networks:
   jenkins-net:
