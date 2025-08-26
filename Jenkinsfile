@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'yourDockerAgentLabel' // Agent phải có Docker CLI + socket
+        label 'jenkins-master' // Agent phải có Docker CLI + socket
     }
 
     environment {
@@ -11,7 +11,7 @@ pipeline {
 
     tools {
         docker 'latest'   // Docker CLI đã cấu hình trong Jenkins
-        jdk 'your_jdk_version'
+        jdk '21'
     }
 
     stages {
