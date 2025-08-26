@@ -1,10 +1,15 @@
-# Dockerfile-jenkins (Minimal - chỉ plugins)
+# Dockerfile-jenkins
 FROM jenkins/jenkins:2.516.2-jdk21
 
+USER root
+
+# Cài Docker CLI để agent có thể dùng Docker
+RUN apt-get update && \
+    apt-get install -y docker.io git curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Trả quyền về user jenkins để an toàn
 USER jenkins
 
-# Cài plugin cần thiết
-RUN jenkins-plugin-cli --plugins "blueocean docker-workflow pipeline-github-lib docker-commons docker-build-step git"
-
-# Skip setup wizard
-ENV JAVA_OPTS -Djenkins.install.runSetupWizard=false
+# Cài plugin Jenkins cần thiết
+RUN jenkins-plugin-cli --plugins "blueocean docker-workflow git"
