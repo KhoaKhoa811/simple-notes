@@ -12,6 +12,12 @@ services:
       - "3308:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - jenkins-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   notes-app:
     build: .
@@ -20,11 +26,22 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      - notes-mysql
+      notes-mysql:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://notes-mysql:3306/notesdb
       SPRING_DATASOURCE_USERNAME: notesuser
       SPRING_DATASOURCE_PASSWORD: notespass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+    networks:
+      - jenkins-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   jenkins:
     build:
@@ -39,14 +56,22 @@ services:
     volumes:
       - jenkins-data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      - /usr/bin/docker:/usr/bin/docker
+      - /usr/bin/docker:/usr/bin/docker:ro
+      # Mount project directory để Jenkins có thể access
+      - .:/workspace
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - JENKINS_OPTS=--httpPort=8080
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
     networks:
       - jenkins-net
+    depends_on:
+      - notes-mysql
 
 volumes:
   mysql_data:
   jenkins-data:
-  jenkins-docker-certs:
 
 networks:
   jenkins-net:
+    driver: bridge
