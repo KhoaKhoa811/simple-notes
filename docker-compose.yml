@@ -26,43 +26,21 @@ services:
       SPRING_DATASOURCE_USERNAME: notesuser
       SPRING_DATASOURCE_PASSWORD: notespass
 
-  jenkins-docker:
-    image: docker:dind
-    container_name: jenkins-docker
-    privileged: true
-    restart: always
-    networks:
-      - jenkins-net
-    environment:
-      DOCKER_TLS_CERTDIR: /certs
-    volumes:
-      - jenkins-docker-certs:/certs/client
-      - jenkins-data:/var/jenkins_home
-    ports:
-      - "2371:2376"
-
   jenkins:
     build:
       context: .
       dockerfile: Dockerfile-jenkins
-    container_name: jenkins-blueocean
-    restart: on-failure
-    networks:
-      - jenkins-net
-    depends_on:
-      - jenkins-docker
-    environment:
-      DOCKER_HOST: tcp://jenkins-docker:2376
-      DOCKER_CERT_PATH: /certs/client
-      DOCKER_TLS_VERIFY: 1
+    container_name: jenkins-master
+    restart: always
+    user: root
     ports:
       - "8080:8080"
       - "50000:50000"
     volumes:
       - jenkins-data:/var/jenkins_home
-      - jenkins-docker-certs:/certs/client:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /usr/bin/docker:/usr/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock   # mount host Docker
+    networks:
+      - jenkins-net
 
 volumes:
   mysql_data:

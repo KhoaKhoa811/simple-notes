@@ -3,12 +3,12 @@ FROM jenkins/jenkins:2.516.2-jdk21
 
 USER root
 
-# Chỉ cài docker CLI
+# Cài Docker CLI (chỉ CLI, không chạy daemon)
 RUN apt-get update && apt-get install -y docker.io \
     && rm -rf /var/lib/apt/lists/*
 
-# Trả quyền về user jenkins để an toàn
+# Trả quyền cho Jenkins user
 USER jenkins
 
-# Cài plugin Jenkins cần cho pipeline + docker
-RUN jenkins-plugin-cli --plugins "blueocean docker-workflow json-path-api"
+# Cài plugin cần thiết cho pipeline + Docker
+RUN jenkins-plugin-cli --plugins "blueocean docker-workflow pipeline-github-lib"
