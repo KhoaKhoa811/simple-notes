@@ -11,7 +11,7 @@ pipeline {
 
     tools {
         docker 'latest'   // Docker CLI đã cấu hình trong Jenkins
-        jdk '21'
+        jdk 'jdk-17'
     }
 
     stages {
