@@ -49,6 +49,7 @@ services:
       dockerfile: Dockerfile-jenkins
     container_name: jenkins-master
     restart: always
+    privileged: true
     user: root
     ports:
       - "8080:8080"
@@ -57,12 +58,14 @@ services:
       - jenkins-data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker:ro
+      - /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins:ro
       # Mount project directory để Jenkins có thể access
       - .:/workspace
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - JENKINS_OPTS=--httpPort=8080
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     networks:
       - jenkins-net
     depends_on:
