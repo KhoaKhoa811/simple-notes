@@ -36,7 +36,7 @@ build/
 mvnw
 mvnw.cmd
 
-# Spring Boot specific
-application.yml
+## Spring Boot specific
+#application.yml
 
 
