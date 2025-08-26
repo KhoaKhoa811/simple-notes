@@ -26,40 +26,48 @@ services:
       SPRING_DATASOURCE_USERNAME: notesuser
       SPRING_DATASOURCE_PASSWORD: notespass
 
+  jenkins-docker:
+    image: docker:dind
+    container_name: jenkins-docker
+    privileged: true
+    restart: always
+    networks:
+      - jenkins-net
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
+    volumes:
+      - jenkins-docker-certs:/certs/client
+      - jenkins-data:/var/jenkins_home
+    ports:
+      - "2371:2376"
+
   jenkins:
     build:
       context: .
       dockerfile: Dockerfile-jenkins
-    container_name: jenkins-master
-    restart: always
-    user: root
+    container_name: jenkins-blueocean
+    restart: on-failure
+    networks:
+      - jenkins-net
+    depends_on:
+      - jenkins-docker
+    environment:
+      DOCKER_HOST: tcp://jenkins-docker:2376
+      DOCKER_CERT_PATH: /certs/client
+      DOCKER_TLS_VERIFY: 1
     ports:
       - "8080:8080"
-      - "50000:50000"  # cho agent JNLP kết nối
+      - "50000:50000"
     volumes:
       - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock  # mount socket
-    networks:
-      - jenkins-net
-
-  jenkins-agent:
-    image: jenkins/agent:latest-jdk11
-    container_name: jenkins-agent
-    restart: always
-    environment:
-      JENKINS_URL: "http://jenkins:8080"
-      JENKINS_SECRET: "e617046a3d2530fee00800ccccca36c37d85f953db414045c6c1680faa0e25df"
-      JENKINS_AGENT_NAME: "docker-agent"
-      JENKINS_AGENT_WORKDIR: "/home/jenkins/agent"
-    volumes:
-      - agent_home:/home/jenkins/agent
-    networks:
-      - jenkins-net
+      - jenkins-docker-certs:/certs/client:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
 
 volumes:
   mysql_data:
   jenkins-data:
-  agent_home:
+  jenkins-docker-certs:
 
 networks:
   jenkins-net:
