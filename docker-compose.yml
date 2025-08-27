@@ -30,27 +30,48 @@ services:
     networks:
       - jenkins-net
 
-  jenkins:
+  jenkins-master:
     build:
       context: .
       dockerfile: Dockerfile-jenkins
     container_name: jenkins-master
     restart: always
     privileged: true
+    user: root
     ports:
       - "8080:8080"
-      - "50000:50000"
+      - "50000:50000"  # JNLP port
     volumes:
       - jenkins-data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      - /home/khoa/Workspace/notes_app:/var/jenkins_home/myproject
     networks:
       - jenkins-net
 
+  jenkins-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile-agent
+    container_name: jenkins-agent
+    depends_on:
+      - jenkins-master
+    user: root
+    environment:
+      JENKINS_URL: http://jenkins-master:8080
+      AGENT_NAME: jenkins-agent
+      AGENT_SECRET: 01a567480ee3de86a4bde466f725164ed0b3b13ecd294c0e25d13de00f0e2ca7
+    volumes:
+      - jenkins-agent-data:/home/jenkins/agent
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    networks:
+      - jenkins-net
 
 volumes:
   mysql_data:
   jenkins-data:
+  jenkins-agent-data:
 
 networks:
   jenkins-net:
+    name: jenkins-net   # ép Compose tạo network đúng tên này
+    driver: bridge

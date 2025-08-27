@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'jenkins-master' // Agent phải có Docker CLI + socket
+        label 'docker' // Agent có Docker CLI + socket
     }
 
     environment {
@@ -10,7 +10,6 @@ pipeline {
     }
 
     tools {
-        docker 'latest'   // Docker CLI đã cấu hình trong Jenkins
         jdk 'jdk-17'
     }
 
@@ -22,30 +21,22 @@ pipeline {
             }
         }
 
-        stage('Stop & Remove Old Containers') {
+        stage('Stop Old Containers') {
             steps {
                 echo "Stopping old containers..."
                 sh """
                     if [ -f \$DOCKER_COMPOSE_FILE ]; then
-                        docker compose -f \$DOCKER_COMPOSE_FILE down
+                        docker compose -f \$DOCKER_COMPOSE_FILE down || true
                     fi
                 """
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                echo "Building Docker image..."
-                sh "docker build . -t simple-notes-app:latest"
-            }
-        }
-
         stage('Build & Up Containers') {
             steps {
-                echo "Starting containers with Docker Compose..."
+                echo "Building and starting containers..."
                 sh """
-                    docker compose -f \$DOCKER_COMPOSE_FILE build --no-cache
-                    docker compose -f \$DOCKER_COMPOSE_FILE up -d
+                    docker compose -f \$DOCKER_COMPOSE_FILE up -d --build
                 """
             }
         }
@@ -60,10 +51,10 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline finished successfully."
+            echo "✅ Pipeline finished successfully."
         }
         failure {
-            echo "Pipeline failed. Check logs above."
+            echo "❌ Pipeline failed. Check logs above."
         }
     }
 }

@@ -1,0 +1,24 @@
+FROM openjdk:21-jdk-slim
+
+# Cài curl và các công cụ cần thiết
+USER root
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Tạo group + user jenkins
+RUN groupadd -r jenkins && useradd -m -r -g jenkins -d /home/jenkins jenkins
+
+# Tạo thư mục agent
+RUN mkdir -p /home/jenkins/agent && \
+    chown -R jenkins:jenkins /home/jenkins && \
+    chmod 755 /home/jenkins/agent
+
+# Copy entrypoint và gán quyền
+COPY entrypoint.sh /home/jenkins/agent/entrypoint.sh
+RUN chmod +x /home/jenkins/agent/entrypoint.sh && chown jenkins:jenkins /home/jenkins/agent/entrypoint.sh
+
+# Chuyển sang user jenkins
+USER jenkins
+WORKDIR /home/jenkins/agent
+
+ENTRYPOINT ["/home/jenkins/agent/entrypoint.sh"]
+
