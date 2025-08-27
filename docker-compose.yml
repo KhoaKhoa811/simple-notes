@@ -32,16 +32,16 @@ services:
       dockerfile: Dockerfile-jenkins
     container_name: jenkins-master
     restart: always
-    user: root
+    privileged: true          # quan trọng để Jenkins chạy Docker
     ports:
       - "8080:8080"
       - "50000:50000"
     volumes:
       - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock   # cho phép build/run docker từ Jenkins
-      - /usr/bin/docker:/usr/bin/docker             # cần để chạy lệnh docker
+      - /var/run/docker.sock:/var/run/docker.sock   # Docker-in-Docker
     networks:
       - jenkins-net
+
 
 volumes:
   mysql_data:
