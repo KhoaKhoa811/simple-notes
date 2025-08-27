@@ -1,15 +1,19 @@
-# Dockerfile-jenkins
 FROM jenkins/jenkins:2.516.2-jdk21
 
 USER root
 
-# Cài Docker CLI để agent có thể dùng Docker
+# Cài Docker CLI + Git, Curl, unzip
 RUN apt-get update && \
-    apt-get install -y docker.io git curl && \
+    apt-get install -y docker.io git curl unzip && \
     rm -rf /var/lib/apt/lists/*
 
-# Trả quyền về user jenkins để an toàn
+# Cài Docker Compose v2
+RUN mkdir -p /usr/local/lib/docker/cli-plugins && \
+    curl -SL "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64" \
+    -o /usr/local/lib/docker/cli-plugins/docker-compose && \
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
 USER jenkins
 
-# Cài plugin Jenkins cần thiết
+# Cài plugin Jenkins cơ bản
 RUN jenkins-plugin-cli --plugins "blueocean docker-workflow git"

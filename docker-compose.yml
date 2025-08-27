@@ -12,6 +12,8 @@ services:
       - "3308:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - jenkins-net
 
   notes-app:
     build: .
@@ -25,6 +27,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://notes-mysql:3306/notesdb
       SPRING_DATASOURCE_USERNAME: notesuser
       SPRING_DATASOURCE_PASSWORD: notespass
+    networks:
+      - jenkins-net
 
   jenkins:
     build:
@@ -32,13 +36,14 @@ services:
       dockerfile: Dockerfile-jenkins
     container_name: jenkins-master
     restart: always
-    privileged: true          # quan trọng để Jenkins chạy Docker
+    privileged: true
     ports:
       - "8080:8080"
       - "50000:50000"
     volumes:
       - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock   # Docker-in-Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/khoa/Workspace/notes_app:/var/jenkins_home/myproject
     networks:
       - jenkins-net
 
