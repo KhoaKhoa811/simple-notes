@@ -40,12 +40,16 @@ services:
     user: root
     ports:
       - "8080:8080"
-      - "50000:50000"  # JNLP port
+      - "50000:50000"
     volumes:
       - jenkins-data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - jenkins-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/login" ]
+      interval: 10s
+      retries: 10
 
   jenkins-agent:
     build:
@@ -53,12 +57,12 @@ services:
       dockerfile: Dockerfile-agent
     container_name: jenkins-agent
     depends_on:
-      - jenkins-master
-    user: root
+      jenkins-master:
+        condition: service_healthy
     environment:
       JENKINS_URL: http://jenkins-master:8080
-      AGENT_NAME: jenkins-agent
-      AGENT_SECRET: 01a567480ee3de86a4bde466f725164ed0b3b13ecd294c0e25d13de00f0e2ca7
+      JENKINS_AGENT_NAME: jenkins-agent
+      JENKINS_SECRET: a9a548af55e211ba545cc82f4ded0c6df7a4cd07dd251cb0627fb8400694fb9a
     volumes:
       - jenkins-agent-data:/home/jenkins/agent
       - /var/run/docker.sock:/var/run/docker.sock
@@ -73,5 +77,4 @@ volumes:
 
 networks:
   jenkins-net:
-    name: jenkins-net   # ép Compose tạo network đúng tên này
     driver: bridge

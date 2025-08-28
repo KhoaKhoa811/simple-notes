@@ -1,11 +1,10 @@
-# Dockerfile-jenkins
 FROM jenkins/jenkins:2.516.2-jdk17
 
 USER root
 
-# Cài Docker CLI + Git, Curl, Unzip
+# Cập nhật repo + cài Docker, Git, Curl, Unzip, net-tools
 RUN apt-get update && \
-    apt-get install -y docker.io git curl unzip && \
+    apt-get install -y docker.io git curl unzip net-tools && \
     rm -rf /var/lib/apt/lists/*
 
 # Cài Docker Compose v2
@@ -14,13 +13,10 @@ RUN mkdir -p /usr/local/lib/docker/cli-plugins && \
     -o /usr/local/lib/docker/cli-plugins/docker-compose && \
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
-# Tạo group docker (nếu chưa tồn tại)
-RUN groupadd -g 999 docker || true && \
-    usermod -aG docker jenkins
+# Tạo group docker nếu chưa có và add user jenkins
+RUN groupadd -g 999 docker || true && usermod -aG docker jenkins
 
 USER jenkins
 
-# Cài plugin Jenkins cơ bản
+# Cài plugin cơ bản
 RUN jenkins-plugin-cli --plugins "blueocean docker-workflow git"
-
-# Master start bằng lệnh mặc định

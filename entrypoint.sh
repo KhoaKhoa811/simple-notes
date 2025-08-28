@@ -1,17 +1,19 @@
 #!/bin/bash
 set -e
 
-JENKINS_URL=${JENKINS_URL:-http://jenkins-master:8080}
-AGENT_JAR="$HOME/agent.jar"
+# Thay host:port bằng tên service của master trong docker-compose
+JENKINS_URL=http://jenkins-master:8080
 
-# Retry download agent.jar cho đến khi thành công
-until curl -fsSL "$JENKINS_URL/jnlpJars/agent.jar" -o "$AGENT_JAR"; do
-    echo "Waiting for Jenkins master at $JENKINS_URL..."
-    sleep 5
-done
+# Download agent.jar từ master nếu chưa có
+if [ ! -f agent.jar ]; then
+    echo "Downloading agent.jar from $JENKINS_URL..."
+    curl -sSL $JENKINS_URL/jnlpJars/agent.jar -o agent.jar
+fi
 
 # Chạy agent
-java -jar "$AGENT_JAR" \
-    -jnlpUrl "$JENKINS_URL/computer/${AGENT_NAME}/jenkins-agent.jnlp" \
-    -secret "$AGENT_SECRET" \
-    -workDir "$HOME/agent"
+exec java -jar agent.jar \
+    -url $JENKINS_URL \
+    -secret $JENKINS_SECRET \
+    -name $JENKINS_AGENT_NAME \
+    -workDir /home/jenkins/agent \
+    -webSocket
