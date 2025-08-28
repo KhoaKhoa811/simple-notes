@@ -12,6 +12,8 @@ services:
       - "3308:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - jenkins-net
 
   notes-app:
     build: .
@@ -25,47 +27,55 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://notes-mysql:3306/notesdb
       SPRING_DATASOURCE_USERNAME: notesuser
       SPRING_DATASOURCE_PASSWORD: notespass
-
-  jenkins-docker:
-    image: docker:dind
-    container_name: jenkins-docker
-    privileged: true
-    restart: always
     networks:
       - jenkins-net
-    environment:
-      DOCKER_TLS_CERTDIR: /certs
-    volumes:
-      - jenkins-docker-certs:/certs/client
-      - jenkins-data:/var/jenkins_home
-    ports:
-      - "2371:2376"
 
-  jenkins:
+  jenkins-master:
     build:
       context: .
       dockerfile: Dockerfile-jenkins
-    container_name: jenkins-blueocean
-    restart: on-failure
-    networks:
-      - jenkins-net
-    depends_on:
-      - jenkins-docker
-    environment:
-      DOCKER_HOST: tcp://jenkins-docker:2376
-      DOCKER_CERT_PATH: /certs/client
-      DOCKER_TLS_VERIFY: 1
+    container_name: jenkins-master
+    restart: always
+    privileged: true
+    user: root
     ports:
       - "8080:8080"
       - "50000:50000"
     volumes:
       - jenkins-data:/var/jenkins_home
-      - jenkins-docker-certs:/certs/client:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - jenkins-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/login" ]
+      interval: 10s
+      retries: 10
+
+  jenkins-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile-agent
+    container_name: jenkins-agent
+    user: root
+    depends_on:
+      jenkins-master:
+        condition: service_healthy
+    environment:
+      JENKINS_URL: http://jenkins-master:8080
+      JENKINS_AGENT_NAME: jenkins-agent
+      JENKINS_SECRET: a9a548af55e211ba545cc82f4ded0c6df7a4cd07dd251cb0627fb8400694fb9a
+    volumes:
+      - jenkins-agent-data:/home/jenkins/agent
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    networks:
+      - jenkins-net
 
 volumes:
   mysql_data:
   jenkins-data:
-  jenkins-docker-certs:
+  jenkins-agent-data:
 
 networks:
   jenkins-net:
+    driver: bridge

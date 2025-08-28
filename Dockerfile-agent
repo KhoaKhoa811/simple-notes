@@ -1,0 +1,49 @@
+# Dockerfile-agent
+FROM openjdk:21-jdk-slim
+
+# Chuyển sang root để cài đặt
+USER root
+
+# Cập nhật repo + cài Docker, Git, Curl, Unzip, net-tools
+RUN apt-get update && \
+    apt-get install -y docker.io git curl unzip net-tools && \
+    rm -rf /var/lib/apt/lists/*
+
+# Cài Docker Compose v2
+RUN mkdir -p /usr/local/lib/docker/cli-plugins && \
+    curl -SL "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64" \
+    -o /usr/local/lib/docker/cli-plugins/docker-compose && \
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+ARG MAVEN_VERSION=3.9.3
+RUN apt-get update && apt-get install -y curl tar && \
+    curl -SL "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" -o /tmp/maven.tar.gz && \
+    tar -xzf /tmp/maven.tar.gz -C /opt && \
+    rm /tmp/maven.tar.gz && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION} /opt/maven
+
+ENV MAVEN_HOME=/opt/maven
+ENV PATH=${MAVEN_HOME}/bin:$PATH
+
+# Tạo user jenkins và thư mục agent
+RUN groupadd -r jenkins && useradd -m -r -g jenkins -d /home/jenkins jenkins
+RUN mkdir -p /home/jenkins/agent \
+    && chown -R jenkins:jenkins /home/jenkins \
+    && chmod 755 /home/jenkins/agent
+
+# Copy entrypoint script
+COPY entrypoint.sh /home/jenkins/agent/entrypoint.sh
+
+# Chỉnh quyền cho entrypoint
+RUN chmod +x /home/jenkins/agent/entrypoint.sh \
+    && chown jenkins:jenkins /home/jenkins/agent/entrypoint.sh
+
+# Đánh dấu workspace an toàn cho Git
+RUN git config --global --add safe.directory /home/jenkins/agent/workspace/notes-app-build
+
+# Chuyển về user jenkins
+USER jenkins
+
+WORKDIR /home/jenkins/agent
+
+ENTRYPOINT ["./entrypoint.sh"]
