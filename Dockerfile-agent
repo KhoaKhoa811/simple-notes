@@ -15,6 +15,16 @@ RUN mkdir -p /usr/local/lib/docker/cli-plugins && \
     -o /usr/local/lib/docker/cli-plugins/docker-compose && \
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
+ARG MAVEN_VERSION=3.9.3
+RUN apt-get update && apt-get install -y curl tar && \
+    curl -SL "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" -o /tmp/maven.tar.gz && \
+    tar -xzf /tmp/maven.tar.gz -C /opt && \
+    rm /tmp/maven.tar.gz && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION} /opt/maven
+
+ENV MAVEN_HOME=/opt/maven
+ENV PATH=${MAVEN_HOME}/bin:$PATH
+
 # Tạo user jenkins và thư mục agent
 RUN groupadd -r jenkins && useradd -m -r -g jenkins -d /home/jenkins jenkins
 RUN mkdir -p /home/jenkins/agent \
@@ -27,6 +37,9 @@ COPY entrypoint.sh /home/jenkins/agent/entrypoint.sh
 # Chỉnh quyền cho entrypoint
 RUN chmod +x /home/jenkins/agent/entrypoint.sh \
     && chown jenkins:jenkins /home/jenkins/agent/entrypoint.sh
+
+# Đánh dấu workspace an toàn cho Git
+RUN git config --global --add safe.directory /home/jenkins/agent/workspace/notes-app-build
 
 # Chuyển về user jenkins
 USER jenkins
